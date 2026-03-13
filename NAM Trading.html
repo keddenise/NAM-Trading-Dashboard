@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAM Trading — IS Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── paste the full CSS from the v2 dashboard here ── */
+/* (same styles as NAM_Trading_Dashboard_v2.html)     */
+
+:root{--bg:#080c10;--surface:#0d1219;--card:#111820;--border:#1e2b3a;--accent:#00e5ff;--accent2:#ff6b35;--accent3:#a855f7;--green:#22d3a4;--red:#ff4560;--text:#e2eaf4;--muted:#5a7a94;--gold:#f0b429;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrapper{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:24px;}
+header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:14px;}
+.brand-tag{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--accent);opacity:.8;}
+.brand-name{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-1px;color:#fff;line-height:1;margin:3px 0;}
+.brand-sub{font-size:10px;color:var(--muted);}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.year-pills{display:flex;gap:6px;}
+.year-pill{padding:6px 14px;border-radius:100px;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .2s;}
+.year-pill.active{background:linear-gradient(135deg,var(--accent2),var(--accent3));border-color:transparent;color:#fff;}
+.sync-btn{display:flex;align-items:center;gap:7px;padding:9px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+.sync-btn:hover{border-color:var(--accent);background:rgba(0,229,255,.06);}
+.sync-btn.loading{opacity:.6;pointer-events:none;}
+.pdf-btn{display:flex;align-items:center;gap:7px;padding:9px 18px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);border-radius:8px;color:var(--accent3);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:pulse 2s infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.month-nav{display:flex;gap:5px;margin-bottom:24px;flex-wrap:wrap;}
+.month-tab{padding:6px 13px;border-radius:6px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .2s;position:relative;}
+.month-tab.active{background:rgba(0,229,255,.1);border-color:var(--accent);color:var(--accent);}
+.month-tab.has-data::after{content:'';position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--green);}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden;transition:transform .2s;}
+.kpi-card:hover{transform:translateY(-2px);}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi-card.c1::before{background:var(--accent)}.kpi-card.c2::before{background:var(--accent2)}.kpi-card.c3::before{background:var(--accent3)}.kpi-card.c4::before{background:var(--green)}
+.kpi-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.kpi-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1;margin-bottom:6px;}
+.kpi-card.c1 .kpi-val{color:var(--accent)}.kpi-card.c2 .kpi-val{color:var(--accent2)}.kpi-card.c3 .kpi-val{color:var(--accent3)}.kpi-card.c4 .kpi-val{color:var(--green)}
+.kpi-sub{font-size:10px;color:var(--muted);}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;margin-top:6px;}
+.badge.profit{background:rgba(34,211,164,.12);color:var(--green)}.badge.loss{background:rgba(255,69,96,.12);color:var(--red)}
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;}
+.charts-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;}
+.ct{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff;margin-bottom:2px;}
+.cs{font-size:9px;color:var(--muted);margin-bottom:14px;letter-spacing:1px;text-transform:uppercase;}
+.opex-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.opex-lbl{font-size:10px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.opex-bar-bg{flex:2;height:3px;background:rgba(255,255,255,.05);border-radius:2px;}
+.opex-bar-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+.opex-amt{font-size:9px;color:var(--muted);min-width:75px;text-align:right;}
+.is-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.is-lbl{font-size:10px;color:var(--muted);}
+.is-lbl.bold{color:var(--text);font-weight:600;}
+.is-amt{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;overflow-x:auto;margin-bottom:14px;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+thead th{text-align:left;padding:7px 10px;color:var(--muted);font-size:8px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.025);transition:background .15s;}
+tbody tr:hover{background:rgba(255,255,255,.02);}
+td{padding:9px 10px;}
+.pos{color:var(--green)}.neg{color:var(--red)}.dim{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:100px;font-size:8px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;}
+.pill.profit{background:rgba(34,211,164,.1);color:var(--green)}.pill.loss{background:rgba(255,69,96,.1);color:var(--red)}.pill.empty{background:rgba(90,122,148,.1);color:var(--muted)}
+.loading-overlay{position:fixed;inset:0;background:rgba(8,12,16,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px;}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-family:'Syne',sans-serif;font-size:14px;color:var(--accent);}
+.error-banner{background:rgba(255,69,96,.1);border:1px solid rgba(255,69,96,.3);border-radius:8px;padding:12px 16px;color:var(--red);font-size:11px;margin-bottom:16px;display:none;}
+.last-sync{font-size:9px;color:var(--muted);}
+footer{text-align:center;padding:18px 0;color:var(--muted);font-size:9px;letter-spacing:2px;border-top:1px solid var(--border);}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.charts-row,.charts-row2,.bottom-grid{grid-template-columns:1fr}}
+@media print{body{background:#fff!important;color:#000!important;}body::before,.sync-btn,.pdf-btn,.month-nav .upload-btn{display:none!important;}.kpi-card,.chart-card,.table-card{border:1px solid #ddd!important;background:#fff!important;break-inside:avoid;}.kpi-val,.ct,.brand-name{color:#000!important;}}
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-txt">Connecting to Google Sheets...</div>
+</div>
+
+<div class="wrapper">
+  <div class="error-banner" id="errorBanner"></div>
+
+  <!-- HEADER -->
+  <header>
+    <div>
+      <div class="brand-tag">Income Statement Dashboard · Live from Google Sheets</div>
+      <div class="brand-name" id="companyName">NAM TRADING</div>
+      <div class="brand-sub" id="companyInfo">Loading...</div>
+    </div>
+    <div class="header-right">
+      <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);">
+        <div class="live-dot"></div>
+        <span id="statusTxt">LIVE · GOOGLE SHEETS</span>
+      </div>
+      <div class="last-sync" id="lastSync"></div>
+      <div class="year-pills" id="yearPills"></div>
+      <button class="sync-btn" onclick="syncData()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        SYNC
+      </button>
+      <button class="pdf-btn" onclick="exportPDF()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        EXPORT PDF
+      </button>
+    </div>
+  </header>
+
+  <div class="month-nav" id="monthNav"></div>
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="ct">Revenue · COGS · Gross Profit</div>
+      <div class="cs" id="r1sub">Monthly</div>
+      <div style="position:relative;height:230px"><canvas id="cRevenue"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="ct">COGS Breakdown</div>
+      <div class="cs">YTD distribution</div>
+      <div style="position:relative;height:230px"><canvas id="cCogs"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row2">
+    <div class="chart-card">
+      <div class="ct">Net Income / Loss</div>
+      <div class="cs">Monthly P&amp;L</div>
+      <div style="position:relative;height:170px"><canvas id="cNet"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="ct">Gross Margin %</div>
+      <div class="cs">Monthly trend</div>
+      <div style="position:relative;height:170px"><canvas id="cMargin"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="ct">Sales vs Target</div>
+      <div class="cs">Monthly performance</div>
+      <div style="position:relative;height:170px"><canvas id="cTarget"></canvas></div>
+    </div>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="chart-card">
+      <div class="ct">OPEX Breakdown</div>
+      <div class="cs">Indirect expenses</div>
+      <div id="opexBars"></div>
+    </div>
+    <div class="chart-card">
+      <div class="ct">Income Statement</div>
+      <div class="cs" id="isSubLabel">Waterfall</div>
+      <div id="isWaterfall"></div>
+    </div>
+    <div class="chart-card">
+      <div class="ct">OPEX Composition</div>
+      <div class="cs">Category split</div>
+      <div style="position:relative;height:200px"><canvas id="cOpex"></canvas></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="ct" style="margin-bottom:3px">Monthly Income Statement</div>
+    <div class="cs" id="tableSubLabel">All 12 months + YTD</div>
+    <table>
+      <thead><tr>
+        <th>Month</th><th>Net Sales (₱)</th><th>COGS (₱)</th><th>Gross Profit (₱)</th>
+        <th>Gross Margin</th><th>Total OpEx (₱)</th><th>Net Income (₱)</th><th>Status</th>
+      </tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <footer id="footerTxt">NAM NONSPECIALIZED WHOLESALE TRADING · IS DASHBOARD</footer>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CONFIGURATION — replace with your Apps Script URL
+// ─────────────────────────────────────────────────────────────
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsBiAIeOdQcrC-MAYyqIOhWJSCIifaclhzMss9nJ4_jpkWpPbErHwG_3TW5JQ1rhI/exec';
+
+// Auto-refresh every 5 minutes
+const AUTO_REFRESH_MS = 5 * 60 * 1000;
+
+// ─────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────
+let state = {
+  config: {},
+  allYears: {},   // { 2025: { isData, cogsBreakdown, opexBreakdown }, ... }
+  activeYear: null,
+  activeMonth: null,
+  charts: {}
+};
+
+// ─────────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  syncData();
+  setInterval(syncData, AUTO_REFRESH_MS);
+});
+
+// ─────────────────────────────────────────────────────────────
+// FETCH FROM GOOGLE SHEETS VIA APPS SCRIPT
+// ─────────────────────────────────────────────────────────────
+async function syncData() {
+  showLoading(true);
+  hideError();
+  const btn = document.querySelector('.sync-btn');
+  if (btn) btn.classList.add('loading');
+
+  try {
+    // First fetch config + available years
+    const configRes = await fetchAPI({ action: 'all', year: state.activeYear || new Date().getFullYear() });
+
+    state.config = configRes.config || {};
+    updateHeader(state.config);
+
+    // Store data for active year
+    const year = parseInt(state.config.year) || new Date().getFullYear();
+    state.allYears[year] = {
+      isData:        configRes.isData,
+      cogsBreakdown: configRes.cogsBreakdown,
+      opexBreakdown: configRes.opexBreakdown,
+      target:        parseFloat(state.config.monthly_target) || 50000
+    };
+
+    // If first load, set activeYear
+    if (!state.activeYear) state.activeYear = year;
+
+    // Fetch all other years
+    const allYrs = configRes.years || [year];
+    for (const y of allYrs) {
+      if (y !== year && !state.allYears[y]) {
+        const res = await fetchAPI({ action: 'all', year: y });
+        state.allYears[y] = {
+          isData:        res.isData,
+          cogsBreakdown: res.cogsBreakdown,
+          opexBreakdown: res.opexBreakdown,
+          target:        parseFloat(state.config.monthly_target) || 50000
+        };
+      }
+    }
+
+    buildYearPills(allYrs);
+    buildMonthNav();
+    renderAll();
+
+    document.getElementById('lastSync').textContent =
+      'Last sync: ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit',minute:'2-digit'});
+
+  } catch (err) {
+    showError('Could not connect to Google Sheets: ' + err.message +
+      '. Check your APPS_SCRIPT_URL and make sure the deployment is public.');
+  } finally {
+    showLoading(false);
+    if (btn) btn.classList.remove('loading');
+  }
+}
+
+async function fetchAPI(params) {
+  const url = new URL(APPS_SCRIPT_URL);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'API error');
+  return json.data;
+}
+
+// ─────────────────────────────────────────────────────────────
+// HEADER UPDATE
+// ─────────────────────────────────────────────────────────────
+function updateHeader(cfg) {
+  if (cfg.company_name) document.getElementById('companyName').textContent = cfg.company_name;
+  const parts = [cfg.address, cfg.contact, cfg.email].filter(Boolean);
+  document.getElementById('companyInfo').textContent = parts.join('  |  ');
+}
+
+// ─────────────────────────────────────────────────────────────
+// YEAR PILLS
+// ─────────────────────────────────────────────────────────────
+function buildYearPills(years) {
+  const c = document.getElementById('yearPills');
+  c.innerHTML = '';
+  (years || []).sort().forEach(y => {
+    const btn = document.createElement('button');
+    btn.className = 'year-pill' + (y === state.activeYear ? ' active' : '');
+    btn.textContent = 'FY ' + y;
+    btn.onclick = async () => {
+      state.activeYear = y;
+      state.activeMonth = null;
+      // Fetch year data if not cached
+      if (!state.allYears[y]) {
+        showLoading(true);
+        try {
+          const res = await fetchAPI({ action: 'all', year: y });
+          state.allYears[y] = { isData: res.isData, cogsBreakdown: res.cogsBreakdown, opexBreakdown: res.opexBreakdown, target: parseFloat(state.config.monthly_target)||50000 };
+        } catch(e) { showError(e.message); }
+        showLoading(false);
+      }
+      buildYearPills(Object.keys(state.allYears).map(Number));
+      buildMonthNav();
+      renderAll();
+    };
+    c.appendChild(btn);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// MONTH NAV
+// ─────────────────────────────────────────────────────────────
+function buildMonthNav() {
+  const nav = document.getElementById('monthNav');
+  nav.innerHTML = '';
+  const d = getYearData();
+  if (!d) return;
+
+  const mkBtn = (label, active, fn, hasData) => {
+    const b = document.createElement('button');
+    b.className = 'month-tab' + (active ? ' active' : '') + (hasData ? ' has-data' : '');
+    b.textContent = label;
+    b.onclick = fn;
+    return b;
+  };
+
+  nav.appendChild(mkBtn('YTD', state.activeMonth === null, () => { state.activeMonth = null; buildMonthNav(); renderAll(); }));
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  months.forEach((m, i) => {
+    const row = d.isData?.[i];
+    const hasData = row && row.sales > 0;
+    nav.appendChild(mkBtn(m, state.activeMonth === i, () => { state.activeMonth = i; buildMonthNav(); renderAll(); }, hasData));
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER ALL
+// ─────────────────────────────────────────────────────────────
+function renderAll() {
+  const d = getYearData();
+  if (!d || !d.isData) return;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const isData = d.isData;
+
+  // Extract arrays
+  const sales       = isData.map(r => r.sales);
+  const cogs        = isData.map(r => r.cogs);
+  const grossProfit = isData.map(r => r.grossProfit);
+  const grossMargin = isData.map(r => r.grossMargin);
+  const opex        = isData.map(r => r.opex);
+  const netIncome   = isData.map(r => r.netIncome);
+
+  renderKPIs({ months, sales, cogs, grossProfit, grossMargin, opex, netIncome });
+  renderCharts({ months, sales, cogs, grossProfit, grossMargin, opex, netIncome, cogsBreakdown: d.cogsBreakdown, opexBreakdown: d.opexBreakdown, target: d.target });
+  renderOpexBars(d.opexBreakdown);
+  renderWaterfall({ sales, cogs, grossProfit, opex, netIncome });
+  renderTable({ months, sales, cogs, grossProfit, grossMargin, opex, netIncome });
+  document.getElementById('footerTxt').textContent = `NAM NONSPECIALIZED WHOLESALE TRADING · IS DASHBOARD FY ${state.activeYear}`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// KPIs
+// ─────────────────────────────────────────────────────────────
+function renderKPIs({ months, sales, cogs, grossProfit, opex, netIncome }) {
+  const [tS, tC, tGP, tOP, tNI] = getSlice({ sales, cogs, grossProfit, opex, netIncome });
+  const gm = tS > 0 ? tGP / tS : 0;
+  const prof = tNI >= 0;
+  const period = state.activeMonth === null ? `YTD FY${state.activeYear}` : months[state.activeMonth] + ' ' + state.activeYear;
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card c1"><div class="kpi-label">Net Sales · ${period}</div><div class="kpi-val">${fmt(tS)}</div><div class="kpi-sub">Gross Revenue</div></div>
+    <div class="kpi-card c2"><div class="kpi-label">Gross Profit · ${period}</div><div class="kpi-val">${fmt(tGP)}</div><div class="kpi-sub">Margin: ${pct(gm)}</div></div>
+    <div class="kpi-card c3"><div class="kpi-label">Total OpEx · ${period}</div><div class="kpi-val">${fmt(tOP)}</div><div class="kpi-sub">Indirect Expenses</div></div>
+    <div class="kpi-card c4"><div class="kpi-label">Net Income · ${period}</div><div class="kpi-val" style="color:${prof?'var(--green)':'var(--red)'}">${fmt(tNI)}</div><div class="badge ${prof?'profit':'loss'}">${prof?'▲ PROFITABLE':'▼ AT A LOSS'}</div></div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────
+// CHARTS
+// ─────────────────────────────────────────────────────────────
+const COLORS = ['#00e5ff','#ff6b35','#a855f7','#22d3a4','#f0b429','#5a7a94','#f472b6'];
+
+const baseOpts = () => ({
+  responsive: true, maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color:'#5a7a94', font:{family:'DM Mono',size:8}, boxWidth:9, padding:8 } },
+    tooltip: { backgroundColor:'#0d1219', borderColor:'#1e2b3a', borderWidth:1, titleColor:'#e2eaf4', bodyColor:'#5a7a94', titleFont:{family:'Syne'}, bodyFont:{family:'DM Mono'},
+      callbacks: { label: ctx => ` ${ctx.dataset.label||ctx.label}: ₱${(ctx.parsed.y??ctx.parsed).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0})}` }
+    }
+  },
+  scales: {
+    x: { ticks:{color:'#5a7a94',font:{family:'DM Mono',size:8}}, grid:{color:'rgba(255,255,255,.025)'} },
+    y: { ticks:{color:'#5a7a94',font:{family:'DM Mono',size:8},callback:v=>{const a=Math.abs(v);return(v<0?'-':'')+'₱'+(a>=1e6?(a/1e6).toFixed(1)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a)}}, grid:{color:'rgba(255,255,255,.04)'} }
+  }
+});
+
+function dc(id){ if(state.charts[id]){state.charts[id].destroy();delete state.charts[id];} }
+
+function renderCharts({ months, sales, cogs, grossProfit, grossMargin, opex, netIncome, cogsBreakdown, opexBreakdown, target }) {
+  // Revenue
+  dc('rev');
+  state.charts.rev = new Chart(document.getElementById('cRevenue'),{type:'bar',data:{labels:months,datasets:[
+    {label:'Net Sales',data:sales,backgroundColor:'rgba(0,229,255,.2)',borderColor:'#00e5ff',borderWidth:1.5,borderRadius:3},
+    {label:'COGS',data:cogs,backgroundColor:'rgba(255,107,53,.2)',borderColor:'#ff6b35',borderWidth:1.5,borderRadius:3},
+    {label:'Gross Profit',data:grossProfit,type:'line',borderColor:'#22d3a4',backgroundColor:'rgba(34,211,164,.1)',borderWidth:2,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#22d3a4'}
+  ]},options:baseOpts()});
+
+  // COGS donut
+  dc('cogs');
+  const cogsLbls=Object.keys(cogsBreakdown||{}).filter(k=>cogsBreakdown[k]?.total>0);
+  const cogsVals=cogsLbls.map(k=>cogsBreakdown[k].total);
+  state.charts.cogs = new Chart(document.getElementById('cCogs'),{type:'doughnut',data:{labels:cogsLbls,datasets:[{data:cogsVals,backgroundColor:COLORS.map(c=>c+'99'),borderColor:COLORS,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#5a7a94',font:{family:'DM Mono',size:8},padding:8,boxWidth:8}},tooltip:{backgroundColor:'#0d1219',borderColor:'#1e2b3a',borderWidth:1,titleColor:'#e2eaf4',bodyColor:'#5a7a94',callbacks:{label:ctx=>` ${ctx.label}: ₱${ctx.parsed.toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0})}`}}}}});
+
+  // Net income
+  dc('net');
+  state.charts.net = new Chart(document.getElementById('cNet'),{type:'bar',data:{labels:months,datasets:[{label:'Net Income',data:netIncome,backgroundColor:netIncome.map(v=>v>=0?'rgba(34,211,164,.6)':'rgba(255,69,96,.6)'),borderColor:netIncome.map(v=>v>=0?'#22d3a4':'#ff4560'),borderWidth:1.5,borderRadius:3}]},options:baseOpts()});
+
+  // Gross margin
+  dc('margin');
+  state.charts.margin = new Chart(document.getElementById('cMargin'),{type:'line',data:{labels:months,datasets:[{label:'Gross Margin %',data:grossMargin.map(v=>+(v*100).toFixed(2)),borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,.1)',borderWidth:2,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#a855f7'}]},options:{...baseOpts(),scales:{x:{ticks:{color:'#5a7a94',font:{family:'DM Mono',size:8}},grid:{color:'rgba(255,255,255,.025)'}},y:{ticks:{color:'#5a7a94',font:{family:'DM Mono',size:8},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.04)'}}}}});
+
+  // Sales vs target
+  dc('target');
+  state.charts.target = new Chart(document.getElementById('cTarget'),{type:'bar',data:{labels:months,datasets:[
+    {label:'Actual Sales',data:sales,backgroundColor:'rgba(0,229,255,.25)',borderColor:'#00e5ff',borderWidth:1.5,borderRadius:3},
+    {label:'Monthly Target',data:new Array(12).fill(target),type:'line',borderColor:'#f0b429',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0,fill:false}
+  ]},options:baseOpts()});
+
+  // OPEX donut
+  dc('opex');
+  const opexLbls=Object.keys(opexBreakdown||{}).filter(k=>opexBreakdown[k]?.total>0);
+  const opexVals=opexLbls.map(k=>opexBreakdown[k].total);
+  state.charts.opex = new Chart(document.getElementById('cOpex'),{type:'doughnut',data:{labels:opexLbls,datasets:[{data:opexVals,backgroundColor:COLORS.map(c=>c+'99'),borderColor:COLORS,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#5a7a94',font:{family:'DM Mono',size:8},padding:8,boxWidth:8}},tooltip:{backgroundColor:'#0d1219',borderColor:'#1e2b3a',borderWidth:1,titleColor:'#e2eaf4',bodyColor:'#5a7a94',callbacks:{label:ctx=>` ${ctx.label}: ₱${ctx.parsed.toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0})}`}}}}});
+}
+
+function renderOpexBars(opexBreakdown) {
+  const el = document.getElementById('opexBars');
+  const entries = Object.entries(opexBreakdown||{}).filter(([,v])=>v?.total>0);
+  const max = Math.max(...entries.map(([,v])=>v.total),1);
+  el.innerHTML = entries.map(([k,v],i)=>`
+    <div class="opex-row">
+      <div class="opex-lbl">${k}</div>
+      <div class="opex-bar-bg"><div class="opex-bar-fill" style="width:${(v.total/max*100).toFixed(1)}%;background:${COLORS[i%COLORS.length]}88;border-right:2px solid ${COLORS[i%COLORS.length]}"></div></div>
+      <div class="opex-amt">₱${v.total.toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:10px;padding:12px 0">No OPEX data</div>';
+}
+
+function renderWaterfall({ sales, cogs, grossProfit, opex, netIncome }) {
+  const [tS,tC,tGP,tOP,tNI] = getSlice({ sales, cogs, grossProfit, opex, netIncome });
+  const gm = tS>0?(tGP/tS*100).toFixed(1):'0.0';
+  const prof = tNI>=0;
+  document.getElementById('isWaterfall').innerHTML = `
+    <div class="is-row"><div class="is-lbl">Net Sales</div><div class="is-amt" style="color:var(--accent)">${fmtN(tS)}</div></div>
+    <div class="is-row"><div class="is-lbl">Less: COGS</div><div class="is-amt" style="color:var(--accent2)">(${fmtN(tC)})</div></div>
+    <div class="is-row"><div class="is-lbl bold">Gross Profit</div><div class="is-amt" style="color:var(--green)">${fmtN(tGP)}</div></div>
+    <div class="is-row"><div class="is-lbl" style="font-size:9px">Gross Margin %</div><div class="is-amt" style="color:var(--muted);font-size:11px">${gm}%</div></div>
+    <div class="is-row"><div class="is-lbl">Less: Total OpEx</div><div class="is-amt" style="color:var(--accent3)">(${fmtN(tOP)})</div></div>
+    <div class="is-row" style="border-bottom:2px solid var(--border);padding-bottom:10px">
+      <div class="is-lbl bold" style="color:${prof?'var(--green)':'var(--red)'}">NET INCOME</div>
+      <div class="is-amt" style="color:${prof?'var(--green)':'var(--red)'};font-size:15px">${fmtN(tNI)}</div>
+    </div>
+    <div style="margin-top:8px"><span class="badge ${prof?'profit':'loss'}">${prof?'▲ PROFITABLE':'▼ NET LOSS'}</span></div>
+  `;
+}
+
+function renderTable({ months, sales, cogs, grossProfit, grossMargin, opex, netIncome }) {
+  const rows = months.map((m, i) => {
+    const has = sales[i]>0;
+    const ni = netIncome[i];
+    const stat = !has?`<span class="pill empty">— PENDING</span>`:ni>0?`<span class="pill profit">✓ PROFIT</span>`:`<span class="pill loss">✕ LOSS</span>`;
+    return `<tr style="${state.activeMonth===i?'background:rgba(0,229,255,.03)':''}">
+      <td style="color:${has?'var(--text)':'var(--muted)'}">${m}</td>
+      <td class="${has?'':'dim'}">${has?fmtN(sales[i]):'—'}</td>
+      <td class="dim">${has?fmtN(cogs[i]):'—'}</td>
+      <td class="${has?(grossProfit[i]>=0?'pos':'neg'):'dim'}">${has?fmtN(grossProfit[i]):'—'}</td>
+      <td class="dim">${has?pct(grossMargin[i]):'—'}</td>
+      <td class="dim">${has?fmtN(opex[i]):'—'}</td>
+      <td class="${has?(ni>=0?'pos':'neg'):'dim'}">${has?fmtN(ni):'—'}</td>
+      <td>${stat}</td>
+    </tr>`;
+  });
+  const tS=sum(sales),tC=sum(cogs),tGP=sum(grossProfit),tOP=sum(opex),tNI=sum(netIncome),tGM=tS>0?sum(grossProfit)/tS:0;
+  rows.push(`<tr style="background:rgba(255,255,255,.035);font-weight:600">
+    <td style="color:#fff">YTD TOTAL</td>
+    <td style="color:var(--accent)">${fmtN(tS)}</td><td style="color:var(--accent2)">${fmtN(tC)}</td>
+    <td class="${tGP>=0?'pos':'neg'}">${fmtN(tGP)}</td><td class="dim">${pct(tGM)}</td>
+    <td style="color:var(--accent3)">${fmtN(tOP)}</td><td class="${tNI>=0?'pos':'neg'}">${fmtN(tNI)}</td>
+    <td><span class="pill ${tNI>=0?'profit':'loss'}">${tNI>=0?'✓ PROFIT':'✕ LOSS'}</span></td>
+  </tr>`);
+  document.getElementById('tableBody').innerHTML = rows.join('');
+}
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
+function getYearData() { return state.allYears[state.activeYear]; }
+function getSlice({ sales, cogs, grossProfit, opex, netIncome }) {
+  const i = state.activeMonth;
+  if (i === null) return [sum(sales),sum(cogs),sum(grossProfit),sum(opex),sum(netIncome)];
+  return [sales[i],cogs[i],grossProfit[i],opex[i],netIncome[i]];
+}
+function sum(a){ return a.reduce((x,y)=>x+y,0); }
+function fmt(v){ const a=Math.abs(v),s=v<0?'-':''; return s+'₱'+(a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e3?(a/1e3).toFixed(1)+'K':a.toFixed(0)); }
+function fmtN(v){ return (v<0?'-':'')+'₱'+Math.abs(v).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function pct(v){ return (v*100).toFixed(1)+'%'; }
+function showLoading(v){ document.getElementById('loadingOverlay').style.display = v?'flex':'none'; }
+function showError(msg){ const b=document.getElementById('errorBanner'); b.style.display='block'; b.textContent='⚠ '+msg; }
+function hideError(){ document.getElementById('errorBanner').style.display='none'; }
+function exportPDF(){ const t=document.title; document.title=`NAM_IS_Dashboard_FY${state.activeYear}`; window.print(); document.title=t; }
+</script>
+</body>
+</html>
